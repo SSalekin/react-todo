@@ -1,204 +1,383 @@
   # Intro
-  Hooks are the newest addition to react v16.8. Uisng hooks it's possible to organize logical components much easily, while making the components much smaller, easier to understand and easier to test. With this we can manage a small to medium projects state easily, keep the components small and concise, and more.
+  Today we will extend on one of the pervious apps we've worked before. We used react hooks to create this [Todo application](https://viblo.asia/p/intro-to-react-hooks-1VgZvGE9lAw)
 
-  Here's a direct quote from Dan "Hooks apply the React philosophy (explicit data flow and composition) inside a component, rather than just between the components. That’s why I feel that Hooks are a natural fit for the React component model.
+  [todo pic]
 
-  Unlike patterns like render props or higher-order components, Hooks don’t introduce unnecessary nesting into your component tree. They also don’t suffer from the drawbacks of mixins." - taken from [here](https://css-tricks.com/intro-to-react-hooks/).
+  That app used `localStorage` to save the state. We will transform it to a full blown PWA with help of `Feathers.js`.
 
-  Also, you can read the official post.
-  [Introducing Hooks](https://reactjs.org/docs/hooks-intro.html)
+  If you want to brush up on your skills on `React Hooks` or `Feathers.js` Please feel free to refer to these previous articles.
 
-  # Why functional components are better
+  []()
+  []()
+  []()
 
-  Easy to understand
+  # Making our app Offline Capable
+  Because we've generated our app using `create-react-app`, we don't have to do a lot to turn our app offline capable. `create-react-app` by default comes with all the settings in place conveniently. But, for development purpose, it's disabled by default.
 
-  Easy to test
-
-  Has better performance than Class components
-
-  101 more reasons about why functional comonents are better than class components can be read [here](https://hackernoon.com/why-react-hooks-a-developers-perspective-2aedb8511f38) and [here](https://programmingwithmosh.com/react/react-functional-components/)
-
-
-  ## useState()
-  is a special function that lets you add the react state into functional components, which wasn't possible before. Previously if we wanted to use state in a component, we had to make sure it was a class component, functional components weren't able to use this feature. Now with `useState()` method, we're able to use the application state inside our functional component. Here you can see the difference,
+  To enable, navigate to `src/index.js`
 
   ```js
-  class Example extends React.Component {
-    constructor(props) {
-      super(props);
-      this.state = {
-        count: 0
-      };
+  import React from 'react';
+  import ReactDOM from 'react-dom';
+  import './index.css';
+  import App from './App';
+  import * as serviceWorker from './serviceWorker';
+
+  ReactDOM.render(<App />, document.getElementById('root'));
+
+  // If you want your app to work offline and load faster, you can change
+  // unregister() to register() below. Note this comes with some pitfalls.
+  // Learn more about service workers: https://bit.ly/CRA-PWA
+  serviceWorker.unregister();   <<======== We need to change this
+  ```
+
+  Find the `serviceWorker.unregister()` (at the bottom) line and replace it with
+
+  ```js
+  serviceWorker.register()
+  ```
+
+  Now, our app is primed to register the `serviceWorker` on pageload. But, there are some gotchas.
+
+  ```js
+  // This optional code is used to register a service worker.
+  // register() is not called by default.
+
+  // This lets the app load faster on subsequent visits in production, and gives
+  // it offline capabilities. However, it also means that developers (and users)
+  // will only see deployed updates on subsequent visits to a page, after all the
+  // existing tabs open on the page have been closed, since previously cached
+  // resources are updated in the background.
+
+  // To learn more about the benefits of this model and instructions on how to
+  // opt-in, read https://bit.ly/CRA-PWA
+
+  const isLocalhost = Boolean(       <<========== This will block sw from loading in development env.
+    window.location.hostname === 'localhost' ||
+      // [::1] is the IPv6 localhost address.
+      window.location.hostname === '[::1]' ||
+      // 127.0.0.1/8 is considered localhost for IPv4.
+      window.location.hostname.match(
+        /^127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}$/
+      )
+  );
+
+  export function register(config) {
+    if (process.env.NODE_ENV === 'production' && 'serviceWorker' in navigator) {
+      // The URL constructor is available in all browsers that support SW.
+      const publicUrl = new URL(process.env.PUBLIC_URL, window.location.href);
+      if (publicUrl.origin !== window.location.origin) {
+        // Our service worker won't work if PUBLIC_URL is on a different origin
+        // from what our page is served on. This might happen if a CDN is used to
+        // serve assets; see https://github.com/facebook/create-react-app/issues/2374
+        return;
+      }
+
+      window.addEventListener('load', () => {
+        const swUrl = `${process.env.PUBLIC_URL}/service-worker.js`;
+
+        if (isLocalhost) {
+          // This is running on localhost. Let's check if a service worker still exists or not.
+          checkValidServiceWorker(swUrl, config);
+
+          // Add some additional logging to localhost, pointing developers to the
+          // service worker/PWA documentation.
+          navigator.serviceWorker.ready.then(() => {
+            console.log(
+              'This web app is being served cache-first by a service ' +
+                'worker. To learn more, visit https://bit.ly/CRA-PWA'
+            );
+          });
+        } else {
+          // Is not localhost. Just register service worker
+          registerValidSW(swUrl, config);
+        }
+      });
+    }
+  }
+
+  function registerValidSW(swUrl, config) {
+    navigator.serviceWorker
+      .register(swUrl)
+      .then(registration => {
+        registration.onupdatefound = () => {
+          const installingWorker = registration.installing;
+          if (installingWorker == null) {
+            return;
+          }
+          installingWorker.onstatechange = () => {
+            if (installingWorker.state === 'installed') {
+              if (navigator.serviceWorker.controller) {
+                // At this point, the updated precached content has been fetched,
+                // but the previous service worker will still serve the older
+                // content until all client tabs are closed.
+                console.log(
+                  'New content is available and will be used when all ' +
+                    'tabs for this page are closed. See https://bit.ly/CRA-PWA.'
+                );
+
+                // Execute callback
+                if (config && config.onUpdate) {
+                  config.onUpdate(registration);
+                }
+              } else {
+                // At this point, everything has been precached.
+                // It's the perfect time to display a
+                // "Content is cached for offline use." message.
+                console.log('Content is cached for offline use.');
+
+                // Execute callback
+                if (config && config.onSuccess) {
+                  config.onSuccess(registration);
+                }
+              }
+            }
+          };
+        };
+      })
+      .catch(error => {
+        console.error('Error during service worker registration:', error);
+      });
+  }
+
+  function checkValidServiceWorker(swUrl, config) {
+    // Check if the service worker can be found. If it can't reload the page.
+    fetch(swUrl)
+      .then(response => {
+        // Ensure service worker exists, and that we really are getting a JS file.
+        const contentType = response.headers.get('content-type');
+        if (
+          response.status === 404 ||
+          (contentType != null && contentType.indexOf('javascript') === -1)
+        ) {
+          // No service worker found. Probably a different app. Reload the page.
+          navigator.serviceWorker.ready.then(registration => {
+            registration.unregister().then(() => {
+              window.location.reload();
+            });
+          });
+        } else {
+          // Service worker found. Proceed as normal.
+          registerValidSW(swUrl, config);
+        }
+      })
+      .catch(() => {
+        console.log(
+          'No internet connection found. App is running in offline mode.'
+        );
+      });
+  }
+
+  export function unregister() {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(registration => {
+        registration.unregister();
+      });
     }
   }
   ```
 
-  we can do the same thing now with
-
+  The way `create-react-app` designed it's service worker, in order for it to work, we have to use it as production environment.
+  You can just modify `isLocalhost` to false, and continue working.
   ```js
-  import React, { useState } from 'react';
+  const isLocalhost = false;
+  ```
 
-  function Example() {
-    const [count, setCount] = useState(0);
+  But a much better way is, to run it from production env.
+  For that run
+
+  ```bash
+  npm i -g serve # if you don't have it installed already
+
+  npm run build  # generate the build folder
+  serve -s build # serve !
+  ```
+
+  Now to production server should be running at `localhost:5000`.
+  Let's test.
+
+ [gif]
+
+ # Creating the api
+ Because we will use `Feathers.js` this is extremely easy part. Will take us less than 5 minutes to be up and running with the API.
+
+ So, let's create a new folder, and generate the app
+ ```
+ mkdir feathers-todo
+ feathers generate app
+ ```
+ select the default options (we disabled authentication for the sake of bravety)
+ [pic feathers generte]
+
+ now, lets create the `todo` service
+ ```bash
+ feathers generate service
+ ```
+ [pic service]
+
+ Just doing this we will have all the necessary api for our app. For now, keep the feathers server running by running `npm start`.
+
+ Let's focus back on our `React Todo` and make it work with the feathers api.
+
+ # Making api calls
+ We'll use `axios` for this. Run this and install `axios` on your code
+ ```bash
+ npm i -s axios
+ ```
+
+Open `App.js` and import `axios` on top.
+```js
+....
+import axios from 'axios';
+```
+
+Now, let's see our old `App.js`
+
+```js
+if (localStorage.getItem('todoStore') !== null) {
+    store = JSON.parse(localStorage.getItem('todoStore'));
+  } else {
+    store = [{
+      item: "example todo",
+      isCompleted: false
+    }]
   }
-  ```
+```
+We were checking if our browser's `localStorage` had previous todos stored, and reading that as our `store` object.
 
-  When we call the `useState()` method, it declares a state variable (here we are using count, but it can be of any name). Also, calling the method returns a couple of values: the current state (`count`), and the function that updates it (`setCount`).
+Let's change that to read from our feathers api
 
-  This does the job of `this.state.count` and `this.setState` like we used in class components before.
+```js
+axios.get('localhost:3030/todos') // 3030 is feathers app running
+.then(function (response) {
+  setTodos(response.data.data);
+})
+.catch(function (error) {
+  console.log(error);
+});
+```
 
-  So, to read the state we can use
-  ```js
-  <p>You clicked {count} times</p>
-  ```
+Fire up the react server and let's run.
 
-  instead of,
-  ```js
-  <p>You clicked {this.state.count} times</p>
-  ```
+[error]
+We are blocked by the `CORS` security countermeasures. No worries, it's just a one line change to make it work.
+Open the `package.json` file, and add the `"proxy": "http://localhost:3030"` line at the bottom.
 
-  And update using
+```
+{
+  "name": "react-todo",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "axios": "^0.19.0",
+    "font-awesome": "^4.7.0",
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0",
+    "react-scripts": "3.1.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "proxy": "http://localhost:3030"  <<<<<<=================
+}
+```
 
-  ```js
-  <button onClick={() => setCount(count + 1)}>
-    Click me
-  </button>
-  ```
+ This will tell react app to redirect any path it can't recognize to the proxy path. Easy as that.
+ That being done. let's modify our code, we can just call `axios.get('/todos')`
+ now, no need to define full path.
 
-  instead of the previous
-
-  ```js
-  <button onClick={() => this.setState({ count: this.state.count + 1 })}>
-    Click me
-  </button>
-  ```
-
-  For more detailed explanation, read [Using the State Hook](https://reactjs.org/docs/hooks-state.html)
-
-  ## useEffect()
-  The Effect hook lets us use side effects from a functional component. It's purpose is similar to the lifecycle methods (`componentDidMount`, `componentDidUpdate`, `componentWillMount`) in class components.
-
-  ```js
-  useEffect(didUpdate);
-  ```
-
-  we can also decide when to re-render a component using `useEffect`
-
-  ```js
-  useEffect(() => {
-    document.title = `Clicked ${count}`;
-  }, [count]);
-  ```
-  this will only re-run when the count value is updated.
-
-  Often, effects generate resources that needs to be purged before the component gets unmounted. Example: Subscription or timer id. For this, the function paseed in `useEffect` can run the cleanup function, example:
-
-  ```js
-  useEffect(() => {
-    const subscription = props.source.subscribe();
-    return () => {
-      // Clean up the subscription
-      subscription.unsubscribe();
-    };
+ ```js
+  axios.get('/todos')
+  .then(function (response) {
+    setTodos(response.data.data);
+  })
+  .catch(function (error) {
+    console.log(error);
   });
-  ```
+```
 
-  more detailed explanation [here](https://reactjs.org/docs/hooks-reference.html#useeffect)
+[gif working]
 
+##Create
 
-  ## useContext()
+Time to modify our create todo method. The previous method only saved data to `localStorage`.
+```js
+const addItem = text => {
+  const newTodos = [...todos, { item: text }];
+  setTodos(newTodos);
+  localStorage.setItem('todoStore', JSON.stringify(newTodos));
+}
+```
 
-  Since the birth of react, one thing developers complained consistantly was passing data throgh many level of components. Before we could only do this by passing props to all the nested child components. Or, we had to use another library like redux to handle this for us, which tbh, is too much work and boilerplate for small apps. That's why with the latest version of react we can use the context api to handle this situation.
-  Here's an example
-
-  ```js
-  // App.js
-  import React from 'react'
-
-  const CurrentRoute = React.createContext({ path: '/welcome' })
-
-  export default function App() {
-    return (
-      <CurrentRoute.Consumer>
-        {currentRoute =>
-          currentRoute.path === '/welcome' &&
-          "Welcome!"
-        }
-      </CurrentRoute.Consumer>
-    )
+Let's change it to actually do api call. After we get response from the server,
+we'll call the `setTodos(todo)` method and update the UI.
+```js
+  const addItem = text => {
+    const todo = { item: text, isCompleted: false };
+    const newTodos = [...todos, todo ];
+    axios.post('/todos', todo)
+    .then(function (response) {
+      setTodos(newTodos);
+    })
+    .catch(function (error) {
+      console.log(error);
+    });
   }
-  ```
+```
 
-  ```js
-  // index.js
-  import React from 'react'
-  import ReactDOM from 'react-dom'
-  import App from './App'
+## Update
+```js
+const complete = index => {
+  const newTodos = [...todos];
+  const todo = newTodos[index];
+  todo.isCompleted = !todo.isCompleted
+  setTodos(newTodos);
+  axios.put(`/todos/${todo._id}`, todo)
+  .then(function (response) {
+    setTodos(newTodos);
+  })
+  .catch(function (error) {
+    console.log(error);
+  });
+}
+```
 
-  ReactDOM.render(<App />, document.getElementById('root'))
-  ```
+## Remove
+```js
+const removeItem = index => {
+  const newTodos = [...todos];
+  const removedTodo = newTodos.splice(index, 1);
 
-  which, if we had to use props drilling, had to be done like this mess
+  axios.delete(`/todos/${removedTodo[0]._id}`)
+  .then(function (response) {
+    setTodos(newTodos);
+  })
+  .catch(function (error) {
+    console.log(error);
+  });
+}
+```
 
-  ```js
-  // App.js
-  import React from 'react'
+And we're done !
 
-  const CurrentRoute = React.createContext({ path: '/welcome' })
-  const CurrentUser = React.createContext(undefined)
-  const IsStatic = React.createContext(false)
-
-  export default function App() {
-    return (
-      <CurrentRoute.Consumer>
-        {currentRoute =>
-          <CurrentUser.Consumer>
-            {currentUser =>
-              <IsStatic.Consumer>
-                {isStatic =>
-                  !isStatic &&
-                  currentRoute.path === '/welcome' &&
-                  (currentUser
-                    ? `Welcome back, ${currentUser.name}!`
-                    : 'Welcome!'
-                  )
-                }
-              </IsStatic.Consumer>
-            }
-          </CurrentUser.Consumer>
-        }
-      </CurrentRoute.Consumer>
-    )
-  }
-  ```
-
-  ```js
-  // index.js
-  import React from 'react'
-  import ReactDOM from 'react-dom'
-  import App from './App'
-
-  ReactDOM.render(<App />, document.getElementById('root'))
-  ```
-
-  (example taken from [here](https://frontarm.com/james-k-nelson/usecontext-react-hook/))
-
-
-  # Creating a demo using useReducer
-
-  Here's a git repo of the finished project
-
-  ## How it can be improved
-  If you read the source code, I have just used `useReducer()` to access state data in functional components. You can use the `useReducer()` and `useContext()` hooks to pass props to children without props drilling, thus making the code more lighter.
-
-  # Learning material
-
-  [Awesome React Hooks](https://github.com/rehooks/awesome-react-hooks) : Hundreds of community submitted custom hooks.
-
-  [Making API call using hooks](https://blog.bitsrc.io/making-api-calls-with-react-hooks-748ebfc7de8c?gi=acccb2ecbdf1)
-
-  [useHooks()](https://usehooks.com/) : More custom hooks, useAuth, useWhyDidYouUpdate
-
-  [Example apps using hooks](https://codesandbox.io/react-hooks)
-
-  # Fountain Hook
+# Source code
+[React App]
+[Feathers App]
